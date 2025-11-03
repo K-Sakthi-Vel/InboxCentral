@@ -10,7 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const { fetchUser } = useAuth();
+  const { login, fetchUser } = useAuth(); // Destructure login from useAuth
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,9 +28,9 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem('token', data.token);
-        await fetchUser(); // Re-fetch user session to update auth state
-        router.push('/');
+        // Use the login function from useAuth to handle token storage and state update
+        login(data.token, data.user);
+        console.log("data",data)
       } else {
         setError(data.message || 'Login failed');
       }

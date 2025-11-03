@@ -1,28 +1,43 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { useRequestTwilioOtp, useVerifyTwilioOtp, useUpdateTwilioNumber } from './api'; // Import new API hooks
 
 interface User {
   id: string;
   email: string;
   name?: string;
   avatarUrl?: string;
+  twilioNumber?: string | null; // Make nullable
+  isTwilioVerified?: boolean;
 }
 
 interface AuthState {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
+  login: (token: string, user: User) => void;
+  logout: () => void;
+  fetchUser: () => Promise<void>;
+  requestTwilioVerification: (twilioNumber: string) => Promise<{ success: boolean; message: string }>;
+  verifyTwilioNumber: (twilioNumber: string, otp: string) => Promise<{ success: boolean; message: string }>;
+  updateTwilioNumber: (twilioNumber: string) => Promise<{ success: boolean; message: string }>;
 }
 
-export function useAuth() {
-  const [authState, setAuthState] = useState<AuthState>({
+const AuthContext = createContext<AuthState | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [authState, setAuthState] = useState<Omit<AuthState, 'login' | 'logout' | 'fetchUser' | 'requestTwilioVerification' | 'verifyTwilioNumber' | 'updateTwilioNumber'>>({
     user: null,
     loading: true,
     isAuthenticated: false,
   });
   const router = useRouter();
+
+  const requestOtpMutation = useRequestTwilioOtp();
+  const verifyOtpMutation = useVerifyTwilioOtp();
+  const updateTwilioNumberMutation = useUpdateTwilioNumber();
 
   const fetchUser = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -59,16 +74,66 @@ export function useAuth() {
   const login = (token: string, user: User) => {
     localStorage.setItem('token', token);
     setAuthState({ user, loading: false, isAuthenticated: true });
-    router.push('/');
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     setAuthState({ user: null, loading: false, isAuthenticated: false });
-    router.push('/login');
+    router.replace('/login'); // Use replace for logout to prevent going back to protected pages
   };
 
-  return { ...authState, login, logout, fetchUser };
+  const requestTwilioVerification = async (twilioNumber: string) => {
+    try {
+      await requestOtpMutation.mutateAsync(twilioNumber);
+      return { success: true, message: 'OTP sent successfully!' };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || 'Failed to send OTP.' };
+    }
+  };
+
+  const verifyTwilioNumber = async (twilioNumber: string, otp: string) => {
+    try {
+      await verifyOtpMutation.mutateAsync({ twilioNumber, otp });
+      await fetchUser();
+      return { success: true, message: 'Twilio number verified successfully!' };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || 'Failed to verify OTP.' };
+    }
+  };
+
+  const updateTwilioNumber = async (twilioNumber: string) => {
+    try {
+      await updateTwilioNumberMutation.mutateAsync(twilioNumber);
+      await fetchUser();
+      return { success: true, message: 'Twilio number updated. Please verify.' };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || 'Failed to update Twilio number.' };
+    }
+  };
+
+  const authContextValue = {
+    ...authState,
+    login,
+    logout,
+    fetchUser,
+    requestTwilioVerification,
+    verifyTwilioNumber,
+    updateTwilioNumber,
+  };
+
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
 
 export function withAuth<P extends object>(Component: React.ComponentType<P & { user: User | null }>) {
@@ -78,15 +143,16 @@ export function withAuth<P extends object>(Component: React.ComponentType<P & { 
 
     useEffect(() => {
       if (!loading && !isAuthenticated) {
-        router.push('/login');
+        router.replace('/login'); // Use replace for initial unauthenticated redirect
+      } else if (!loading && isAuthenticated && user && !user.isTwilioVerified) {
+        router.replace('/verify-twilio'); // Use replace for Twilio verification redirect
       }
-    }, [loading, isAuthenticated, router]);
+    }, [loading, isAuthenticated, user, router]);
 
     if (loading || !isAuthenticated) {
       return <div className="min-h-screen flex items-center justify-center bg-gray-100">Loading...</div>;
     }
 
-    // Ensure the user prop is passed correctly
     const componentProps = { ...props, user };
     return <Component {...componentProps} />;
   };

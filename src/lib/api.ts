@@ -6,6 +6,8 @@
 import axios, { AxiosInstance } from 'axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL + '/api';
+
 export type Thread = {
   id: string;
   contactName?: string | null;
@@ -25,7 +27,7 @@ export type Message = {
 };
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL + '/api',
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -54,6 +56,44 @@ export function useThreads() {
       } catch (err) {
         throw err; // Re-throw the error to be handled by React Query's error handling
       }
+    },
+  });
+}
+
+/** Update Twilio Number mutation */
+export function useUpdateTwilioNumber() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (twilioNumber: string) => {
+      const res = await api.put('/auth/update-twilio-number', { twilioNumber });
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['session'] }); // Invalidate session to refetch user data
+    },
+  });
+}
+
+/** Request Twilio OTP mutation */
+export function useRequestTwilioOtp() {
+  return useMutation({
+    mutationFn: async (twilioNumber: string) => {
+      const res = await api.post('/auth/request-twilio-otp', { twilioNumber });
+      return res.data;
+    },
+  });
+}
+
+/** Verify Twilio OTP mutation */
+export function useVerifyTwilioOtp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { twilioNumber: string; otp: string }) => {
+      const res = await api.post('/auth/verify-twilio-otp', payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['session'] }); // Invalidate session to refetch user data
     },
   });
 }

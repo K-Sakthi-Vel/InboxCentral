@@ -9,6 +9,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [twilioNumber, setTwilioNumber] = useState(''); // New state for Twilio number
   const [error, setError] = useState('');
   const router = useRouter();
   const { fetchUser } = useAuth();
@@ -23,7 +24,7 @@ export default function SignupPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email, password, name, twilioNumber }), // Include twilioNumber
       });
 
       const data = await res.json();
@@ -31,7 +32,6 @@ export default function SignupPage() {
       if (res.ok) {
         localStorage.setItem('token', data.token);
         await fetchUser(); // Re-fetch user session to update auth state
-        router.push('/');
       } else {
         setError(data.message || 'Signup failed');
       }
@@ -74,6 +74,19 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="twilioNumber" className="block text-gray-700 text-sm font-bold mb-2">
+              Twilio Number (e.g., +12345678900)
+            </label>
+            <input
+              type="text"
+              id="twilioNumber"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              value={twilioNumber}
+              onChange={(e) => setTwilioNumber(e.target.value)}
+              placeholder="+12345678900"
             />
           </div>
           <div className="mb-6">
