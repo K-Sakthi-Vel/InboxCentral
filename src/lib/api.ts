@@ -25,9 +25,23 @@ export type Message = {
 };
 
 const api: AxiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL + '/api',
   headers: { 'Content-Type': 'application/json' }
 });
+
+// Add a request interceptor to include the JWT token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 /** Fetch threads (group by contact) */
 export function useThreads() {
@@ -38,11 +52,7 @@ export function useThreads() {
         const res = await api.get<Thread[]>('/inbox/threads');
         return res.data;
       } catch (err) {
-        // fallback mock data if backend not ready
-        return [
-          { id: 't1', contactName: 'Alice', snippet: 'Hey, is this available?', unread: 1, channel: 'SMS', updatedAt: new Date().toISOString() },
-          { id: 't2', contactName: 'Bob', snippet: 'Thanks for the info', unread: 0, channel: 'WHATSAPP', updatedAt: new Date().toISOString() }
-        ];
+        throw err; // Re-throw the error to be handled by React Query's error handling
       }
     },
   });
@@ -57,11 +67,7 @@ export function useMessages(threadId: string) {
         const res = await api.get<Message[]>(`/messages/thread/${threadId}`);
         return res.data;
       } catch (err) {
-        // fallback sample messages
-        return [
-          { id: 'm1', direction: 'INBOUND', body: 'Hello', media: null, createdAt: new Date().toISOString() },
-          { id: 'm2', direction: 'OUTBOUND', body: 'Hi there!', media: null, createdAt: new Date().toISOString() }
-        ];
+        throw err; // Re-throw the error to be handled by React Query's error handling
       }
     },
     enabled: !!threadId,
