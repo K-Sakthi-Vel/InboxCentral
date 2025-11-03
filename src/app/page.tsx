@@ -13,74 +13,87 @@ export default function InboxPage(): JSX.Element {
   const [showContact, setShowContact] = useState(false);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      {/* Left: threads */}
-      <aside className="lg:col-span-3 bg-white border rounded p-2">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-medium">Threads</h2>
-          <button className="text-sm text-blue-600">New</button>
-        </div>
-
-        {isLoading ? (
-          <div>Loading...</div>
-        ) : (
-          <div className="space-y-2 overflow-y-auto max-h-[70vh]">
-            {threads?.map((t: { id: any; contactName?: string | null | undefined; snippet?: string | null | undefined; unread?: number | null | undefined; updatedAt?: string | null | undefined; channel?: string | null | undefined; }) => (
-              <ThreadCard
-                key={t.id}
-                thread={t}
-                isSelected={t.id === selectedThreadId}
-                onClick={() => setSelectedThreadId(t.id)}
-              />
-            )) ?? <div className="text-sm text-gray-500">No threads yet</div>}
+    // STEP 1: Change to a two-column grid. Example uses fixed width for sidebar (300px)
+    <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 h-[calc(100vh-120px)]"> 
+      
+      {/* Left Column: Threads and Quick Actions (Now combined into one full-height column) */}
+      <div className="flex flex-col gap-6"> 
+          
+        {/* Top of Left: Threads */}
+        <aside className="bg-white shadow-md rounded-xl p-4 flex flex-col flex-1">
+          <div className="flex items-center justify-between mb-4 flex-shrink-0">
+            <h2 className="text-lg font-semibold text-gray-800">Threads</h2>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+              New
+            </button>
           </div>
-        )}
-      </aside>
 
-      {/* Middle: messages */}
-      <section className="lg:col-span-6 bg-white border rounded p-4 flex flex-col">
+          {isLoading ? (
+            <div className="text-center text-gray-500 py-10">Loading threads...</div>
+          ) : (
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+              {threads?.map((t: { id: any; contactName?: string | null | undefined; snippet?: string | null | undefined; unread?: number | null | undefined; updatedAt?: string | null | undefined; channel?: string | null | undefined; }) => (
+                <ThreadCard
+                  key={t.id}
+                  thread={t}
+                  isSelected={t.id === selectedThreadId}
+                  onClick={() => setSelectedThreadId(t.id)}
+                />
+              )) ?? <div className="text-center text-gray-500 py-10">No threads yet</div>}
+            </div>
+          )}
+        </aside>
+
+        {/* Bottom of Left: Quick Actions */}
+        {/* We keep this as a separate aside/div to stack it visually, it doesn't need to be h-full now */}
+        <aside className="bg-white shadow-md rounded-xl p-4 flex flex-col flex-shrink-0">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
+          <div className="text-sm text-gray-600 mb-6">Contact preview and analytics will appear here.</div>
+          <div>
+            <button
+              className="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+              onClick={() => alert('Analytics not yet implemented')}
+            >
+              View Analytics
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      {/* Right Column: Messages (Full Height and fills remaining space) */}
+      <section className="bg-white shadow-md rounded-xl p-6 flex flex-col **h-full**">
         {selectedThreadId ? (
           <>
-            <div className="flex items-center justify-between border-b pb-2 mb-2">
+            {/* Header: Fixed height top section - Added flex-shrink-0 */}
+            <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-4 **flex-shrink-0**">
               <div>
-                <h3 className="font-semibold">Thread</h3>
+                <h3 className="text-xl font-bold text-gray-800">Thread with Contact</h3>
                 <div className="text-sm text-gray-500">contact@example.com · WhatsApp</div>
               </div>
               <div>
                 <button
-                  className="text-sm text-gray-600"
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
                   onClick={() => setShowContact(true)}
                 >
-                  Contact
+                  View Contact
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            {/* Message List: Flexible section - has flex-1 to grow */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               <MessageList threadId={selectedThreadId} />
             </div>
 
-            <div className="mt-2">
+            {/* Composer: Fixed height bottom section - Added flex-shrink-0 */}
+            <div className="mt-6 **flex-shrink-0**">
               <Composer threadId={selectedThreadId} />
             </div>
           </>
         ) : (
-          <div className="text-center text-gray-500 py-20">Select a thread to view messages</div>
+          <div className="text-center text-gray-500 py-20 text-lg">Select a thread to view messages</div>
         )}
       </section>
-
-      {/* Right: quick actions / placeholder */}
-      <aside className="lg:col-span-3 bg-white border rounded p-4">
-        <div className="text-sm text-gray-600 mb-4">Contact preview / analytics stub</div>
-        <div>
-          <button
-            className="px-3 py-2 rounded bg-blue-600 text-white text-sm"
-            onClick={() => alert('Analytics not yet implemented')}
-          >
-            View Analytics
-          </button>
-        </div>
-      </aside>
 
       <ContactModal open={showContact} onClose={() => setShowContact(false)} />
     </div>
