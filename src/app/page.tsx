@@ -1,65 +1,88 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { JSX, useState } from 'react';
+import ThreadCard from '@/components/ThreadCard';
+import MessageList from '@/components/MessageList';
+import Composer from '@/components/Composer';
+import ContactModal from '@/components/ContactModal';
+import { useThreads } from '@/lib/api';
+
+export default function InboxPage(): JSX.Element {
+  const { data: threads, isLoading } = useThreads();
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const [showContact, setShowContact] = useState(false);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      {/* Left: threads */}
+      <aside className="lg:col-span-3 bg-white border rounded p-2">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-medium">Threads</h2>
+          <button className="text-sm text-blue-600">New</button>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {isLoading ? (
+          <div>Loading...</div>
+        ) : (
+          <div className="space-y-2 overflow-y-auto max-h-[70vh]">
+            {threads?.map((t: { id: any; contactName?: string | null | undefined; snippet?: string | null | undefined; unread?: number | null | undefined; updatedAt?: string | null | undefined; channel?: string | null | undefined; }) => (
+              <ThreadCard
+                key={t.id}
+                thread={t}
+                isSelected={t.id === selectedThreadId}
+                onClick={() => setSelectedThreadId(t.id)}
+              />
+            )) ?? <div className="text-sm text-gray-500">No threads yet</div>}
+          </div>
+        )}
+      </aside>
+
+      {/* Middle: messages */}
+      <section className="lg:col-span-6 bg-white border rounded p-4 flex flex-col">
+        {selectedThreadId ? (
+          <>
+            <div className="flex items-center justify-between border-b pb-2 mb-2">
+              <div>
+                <h3 className="font-semibold">Thread</h3>
+                <div className="text-sm text-gray-500">contact@example.com · WhatsApp</div>
+              </div>
+              <div>
+                <button
+                  className="text-sm text-gray-600"
+                  onClick={() => setShowContact(true)}
+                >
+                  Contact
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              <MessageList threadId={selectedThreadId} />
+            </div>
+
+            <div className="mt-2">
+              <Composer threadId={selectedThreadId} />
+            </div>
+          </>
+        ) : (
+          <div className="text-center text-gray-500 py-20">Select a thread to view messages</div>
+        )}
+      </section>
+
+      {/* Right: quick actions / placeholder */}
+      <aside className="lg:col-span-3 bg-white border rounded p-4">
+        <div className="text-sm text-gray-600 mb-4">Contact preview / analytics stub</div>
+        <div>
+          <button
+            className="px-3 py-2 rounded bg-blue-600 text-white text-sm"
+            onClick={() => alert('Analytics not yet implemented')}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            View Analytics
+          </button>
         </div>
-      </main>
+      </aside>
+
+      <ContactModal open={showContact} onClose={() => setShowContact(false)} />
     </div>
   );
 }
