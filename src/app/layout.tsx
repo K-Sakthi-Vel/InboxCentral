@@ -26,7 +26,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
 
   return (
     <html lang="en">
-      <head />
+      <head>
+        <title>Inbox Central</title>
+      </head>
       <body>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
