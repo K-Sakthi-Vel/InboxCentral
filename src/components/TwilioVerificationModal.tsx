@@ -42,6 +42,8 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
   const [loadingCountryCodes, setLoadingCountryCodes] = useState(true);
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false); // State for country code dropdown
   const countryCodeDropdownRef = useRef<HTMLDivElement>(null); // Ref for country code dropdown
+  const [loadingRequestOtp, setLoadingRequestOtp] = useState(false);
+  const [loadingVerifyOtp, setLoadingVerifyOtp] = useState(false);
 
   useEffect(() => {
     const fetchCountryData = async () => {
@@ -124,16 +126,19 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
     e.preventDefault();
     setError('');
     setMessage('');
+    setLoadingRequestOtp(true);
 
     const fullTwilioNumber = selectedCountryCode + twilioNumber;
 
     if (!fullTwilioNumber) {
       setError('Please enter your Twilio number.');
+      setLoadingRequestOtp(false);
       return;
     }
 
     if (!currentTwilioNumber && (!twilioAccountSid || !twilioAuthToken || !twilioSmsFrom || !twilioWhatsappFrom)) {
       setError('Please fill in all Twilio credentials.');
+      setLoadingRequestOtp(false);
       return;
     }
 
@@ -151,6 +156,7 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
         if (!updateResult.success) {
           setError(updateResult.message);
           toast.error(updateResult.message);
+          setLoadingRequestOtp(false);
           return;
         }
       }
@@ -179,6 +185,8 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
       console.error('Request OTP error:', err);
       setError('An unexpected error occurred.');
       toast.error('An unexpected error occurred.');
+    } finally {
+      setLoadingRequestOtp(false);
     }
   };
 
@@ -186,11 +194,13 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
     e.preventDefault();
     setError('');
     setMessage('');
+    setLoadingVerifyOtp(true);
 
     const fullTwilioNumber = selectedCountryCode + twilioNumber;
 
     if (!otp) {
       setError('Please enter the OTP.');
+      setLoadingVerifyOtp(false);
       return;
     }
 
@@ -216,6 +226,8 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
       console.error('Verify OTP error:', err);
       setError('An unexpected error occurred.');
       toast.error('An unexpected error occurred.');
+    } finally {
+      setLoadingVerifyOtp(false);
     }
   };
 
@@ -353,9 +365,20 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
             {message && <p className="text-green-700 text-sm italic mb-4">{message}</p>}
             <button
               type="submit"
-              className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+              className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full flex items-center justify-center"
+              disabled={loadingRequestOtp}
             >
-              Request OTP via WhatsApp
+              {loadingRequestOtp ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Requesting...
+                </>
+              ) : (
+                'Request OTP via WhatsApp'
+              )}
             </button>
           </form>
         ) : (
@@ -389,9 +412,20 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
             {message && <p className="text-green-700 text-sm italic mb-4">{message}</p>}
             <button
               type="submit"
-              className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+              className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full flex items-center justify-center"
+              disabled={loadingVerifyOtp}
             >
-              Verify OTP
+              {loadingVerifyOtp ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Verifying...
+                </>
+              ) : (
+                'Verify OTP'
+              )}
             </button>
           </form>
         )}
