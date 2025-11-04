@@ -32,7 +32,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4 text-gray-800">Total Messages Overview</h2>
           <div className="space-y-2">
@@ -67,15 +67,7 @@ export default function Dashboard() {
             </li>
           </ul>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Quick Actions</h2>
-          <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors duration-200">
-            Send New Message
-          </button>
-          <button className="bg-green-500 text-white px-4 py-2 rounded-md ml-2 hover:bg-green-600 transition-colors duration-200">
-            View All Contacts
-          </button>
-        </div>
+
 
         <div className="bg-white p-6 rounded-lg shadow-md col-span-full">
           <h2 className="text-xl font-semibold mb-4 text-gray-800">Messages Sent/Received (Last 7 Days)</h2>
@@ -132,23 +124,6 @@ export default function Dashboard() {
                 <span className="font-semibold">{contact.messages}</span>
               </li>
             ))}
-          </ul>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Active Conversations</h2>
-          <ul className="space-y-2">
-            <li className="flex justify-between items-center text-gray-700">
-              <span>John Doe</span>
-              <span className="text-sm text-gray-500">5 messages</span>
-            </li>
-            <li className="flex justify-between items-center text-gray-700">
-              <span>Jane Smith</span>
-              <span className="text-sm text-gray-500">3 messages</span>
-            </li>
-            <li className="flex justify-between items-center text-gray-700">
-              <span>Alice Brown</span>
-              <span className="text-sm text-gray-500">2 messages</span>
-            </li>
           </ul>
         </div>
       </div>
