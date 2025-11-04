@@ -26,6 +26,17 @@ export type Message = {
   createdAt: string;
 };
 
+export type Note = {
+  id: string;
+  content: string;
+  author: {
+    id: string;
+    name: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' }
@@ -125,6 +136,35 @@ export function useSendMessage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['messages'] });
       qc.invalidateQueries({ queryKey: ['threads'] });
+    },
+  });
+}
+
+/** Fetch all notes */
+export function useNotes() {
+  return useQuery<Note[], Error>({
+    queryKey: ['notes'],
+    queryFn: async () => {
+      try {
+        const res = await api.get<Note[]>('/notes');
+        return res.data;
+      } catch (err) {
+        throw err;
+      }
+    },
+  });
+}
+
+/** Save note mutation */
+export function useSaveNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { content: string }) => {
+      const res = await api.post('/notes', { content: payload.content });
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['notes'] });
     },
   });
 }

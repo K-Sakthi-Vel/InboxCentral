@@ -33,6 +33,13 @@ export default function UnifiedInbox(): JSX.Element {
     }
   }, [authLoading, isAuthenticated, user]);
 
+  // Automatically select the first thread if available
+  useEffect(() => {
+    if (Array.isArray(threads) && threads.length > 0 && !selectedThreadId) {
+      setSelectedThreadId(threads[0].id);
+    }
+  }, [threads, selectedThreadId]);
+
   const handleRequestOtp = async () => {
     setTwilioError('');
     setTwilioSuccess('');
@@ -111,39 +118,51 @@ export default function UnifiedInbox(): JSX.Element {
 
       {/* Right Column: Messages (Full Height and fills remaining space) */}
       <section className="bg-white shadow-md rounded-xl p-6 flex flex-col h-[calc(100vh-90px)]">
-        {selectedThreadId ? (
-          <>
-            {/* Header: Fixed height top section - Added flex-shrink-0 */}
-            <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-4 flex-shrink-0">
-              <div className="flex items-center">
-                <UserIcon className="h-10 w-10 text-gray-400 mr-3" />
+        {Array.isArray(threads) && threads.length > 0 ? (
+          selectedThreadId ? (
+            <>
+              {/* Header: Fixed height top section - Added flex-shrink-0 */}
+              <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-4 flex-shrink-0">
+                <div className="flex items-center">
+                  <UserIcon className="h-10 w-10 text-gray-400 mr-3" />
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800">{selectedThread?.contactName}</h3>
+                    <div className="text-sm text-gray-500">{messages?.length} messages · {selectedThread?.channel}</div>
+                  </div>
+                </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{selectedThread?.contactName}</h3>
-                  <div className="text-sm text-gray-500">{messages?.length} messages · {selectedThread?.channel}</div>
+                  <button
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
+                    onClick={() => setShowContact(true)}
+                  >
+                    View Contact
+                  </button>
                 </div>
               </div>
-              <div>
-                <button
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
-                  onClick={() => setShowContact(true)}
-                >
-                  View Contact
-                </button>
+
+              {/* Message List: Flexible section - has flex-1 to grow */}
+              <div className="flex-1 overflow-y-auto">
+                <MessageList threadId={selectedThreadId} messages={messages} />
               </div>
-            </div>
 
-            {/* Message List: Flexible section - has flex-1 to grow */}
-            <div className="flex-1 overflow-y-auto">
-              <MessageList threadId={selectedThreadId} messages={messages} />
+              {/* Composer: Fixed height bottom section - Added flex-shrink-0 */}
+              <div className="mt-6 flex-shrink-0">
+                <Composer threadId={selectedThreadId} initialChannel={threads?.find(t => t.id === selectedThreadId)?.channel || 'SMS'} />
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <img src="/file.svg" alt="Loading threads" className="h-24 w-24 mb-4 animate-pulse" />
+              <p className="text-lg font-semibold">Loading threads...</p>
+              <p className="text-sm">Please wait while we fetch your conversations.</p>
             </div>
-
-            {/* Composer: Fixed height bottom section - Added flex-shrink-0 */}
-            <div className="mt-6 flex-shrink-0">
-              <Composer threadId={selectedThreadId} initialChannel={threads?.find(t => t.id === selectedThreadId)?.channel || 'SMS'} />
-            </div>
-          </>
+          )
         ) : (
-          <div className="text-center text-gray-500 py-20 text-lg">Select a thread to view messages</div>
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <img src="/file.svg" alt="No threads" className="h-24 w-24 mb-4" />
+            <p className="text-lg font-semibold">No threads available</p>
+            <p className="text-sm">Start a new conversation to see messages here.</p>
+          </div>
         )}
       </section>
 

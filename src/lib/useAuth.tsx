@@ -11,6 +11,7 @@ interface User {
   avatarUrl?: string;
   twilioNumber?: string | null; // Make nullable
   isTwilioVerified?: boolean;
+  teamRoles?: { teamId: string }[];
 }
 
 interface AuthState {

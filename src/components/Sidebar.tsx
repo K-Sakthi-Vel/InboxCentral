@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { HomeIcon, InboxIcon } from '@heroicons/react/24/outline'; // Using Heroicons for icons
+import { HomeIcon, InboxIcon, PencilSquareIcon } from '@heroicons/react/24/outline'; // Using Heroicons for icons
 
 interface SidebarProps {
   children: React.ReactNode;
@@ -20,6 +20,8 @@ export default function Sidebar({ children, onTabChange }: SidebarProps) {
       onTabChange('Dashboard');
     } else if (pathname === '/inbox') {
       onTabChange('Unified Inbox');
+    } else if (pathname === '/notes') {
+      onTabChange('Notes');
     } else {
       onTabChange(''); // Clear tab name for other pages
     }
@@ -52,6 +54,10 @@ export default function Sidebar({ children, onTabChange }: SidebarProps) {
           <Link href="/inbox" className={`flex items-center px-4 py-2 rounded-md ${pathname === '/inbox' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'} transition-colors duration-200`}>
               <InboxIcon className="h-6 w-6 mr-3" />
               {isExpanded && <span className="text-sm font-medium">Unified Inbox</span>}
+          </Link>
+          <Link href="/notes" className={`flex items-center px-4 py-2 rounded-md ${pathname === '/notes' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'} transition-colors duration-200`}>
+              <PencilSquareIcon className="h-6 w-6 mr-3" />
+              {isExpanded && <span className="text-sm font-medium">Notes</span>}
           </Link>
         </nav>
 

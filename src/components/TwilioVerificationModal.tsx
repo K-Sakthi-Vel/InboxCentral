@@ -195,9 +195,9 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
   );
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
+    <div className="fixed inset-0 backdrop-blur-sm overflow-y-auto h-full w-full flex justify-center items-center z-50">
       <div className="relative p-8 border w-full max-w-md md:max-w-lg shadow-lg rounded-md bg-white">
-        <h3 className="text-2xl font-bold text-center mb-6">Verify Twilio Number</h3>
+        <h3 className="text-2xl font-bold text-center mb-6 text-black">Verify Twilio Number</h3>
         <button
           className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 text-xl"
           onClick={onClose}
@@ -235,7 +235,7 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
                         />
                         {filteredCountryCodes.map((country) => (
                           <button
-                            key={country.code}
+                            key={`${country.code}-${country.name}`}
                             type="button"
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             onClick={() => {
@@ -276,6 +276,18 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp}>
+            <div className="mb-4 text-center">
+              <p className="text-gray-700 text-sm mb-2">
+                OTP sent to <span className="font-bold">{selectedCountryCode}{twilioNumber}</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => setOtpSent(false)}
+                className="text-blue-600 hover:text-blue-800 text-sm underline mb-4 focus:outline-none"
+              >
+                Change Number
+              </button>
+            </div>
             <div className="mb-4">
               <label htmlFor="otp" className="block text-gray-700 text-sm font-bold mb-2">
                 OTP
