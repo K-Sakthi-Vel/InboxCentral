@@ -98,7 +98,11 @@ export default function MessageList({ threadId, messages }: MessageListProps) {
               'text-xs mt-2',
               m.direction === 'INBOUND' ? 'text-gray-500' : 'text-blue-200'
             )}>
-              {new Date(m.createdAt).toLocaleString()}
+              {m.status === 'PENDING' && m.scheduledAt ? (
+                <span>Scheduled for {new Date(m.scheduledAt).toLocaleString()}</span>
+              ) : (
+                <span>{new Date(m.createdAt).toLocaleString()}</span>
+              )}
             </div>
           </div>
         </div>

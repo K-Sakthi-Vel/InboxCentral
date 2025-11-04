@@ -24,11 +24,7 @@ export default function AuthCallbackPage() {
 
           if (res.ok && data.user) {
             login(token, data.user); // Update global auth state
-            if (data.user.isTwilioVerified) {
-              router.replace('/'); // Redirect to home if Twilio is verified
-            } else {
-              router.replace('/verify-twilio'); // Redirect to Twilio verification if not verified
-            }
+            router.replace('/'); // Redirect to home after successful login, AuthWrapper will handle Twilio verification modal
           } else {
             localStorage.removeItem('token');
             router.replace('/login'); // Redirect to login if session fetch fails

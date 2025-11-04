@@ -24,6 +24,8 @@ export type Message = {
   body?: string | null;
   media?: string[] | null;
   createdAt: string;
+  status?: 'PENDING' | 'SENT' | 'FAILED';
+  scheduledAt?: string | null;
 };
 
 export type Note = {

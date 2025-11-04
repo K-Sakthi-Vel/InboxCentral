@@ -188,8 +188,6 @@ export function withAuth<P extends object>(Component: React.ComponentType<P & { 
     useEffect(() => {
       if (!loading && !isAuthenticated) {
         router.replace('/login'); // Use replace for initial unauthenticated redirect
-      } else if (!loading && isAuthenticated && user && !user.isTwilioVerified) {
-        router.replace('/verify-twilio'); // Use replace for Twilio verification redirect
       }
     }, [loading, isAuthenticated, user, router]);
 
