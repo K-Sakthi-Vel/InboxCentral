@@ -1,6 +1,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { formatDistanceToNow } from 'date-fns';
+import UserIcon from './UserIcon';
 
 export type Thread = {
   id: string;
@@ -31,9 +32,12 @@ export default function ThreadCard({ thread, onClick, isSelected = false }: Thre
         if (e.key === 'Enter' && onClick) onClick();
       }}
     >
-      <div className="flex-1">
-        <div className="font-semibold text-gray-800">{thread.contactName || 'Unknown'}</div>
-        <div className="text-sm text-gray-600 mt-1 truncate">{thread.snippet || '—'}</div>
+      <div className="flex items-center">
+        <UserIcon className="h-10 w-10 text-gray-400 mr-3" />
+        <div className="flex-1">
+          <div className="font-semibold text-gray-800">{thread.contactName || 'Unknown'}</div>
+          <div className="text-sm text-gray-600 mt-1 truncate">{thread.snippet || '—'}</div>
+        </div>
       </div>
       <div className="text-right ml-4 flex-shrink-0">
         <div className="text-xs text-gray-500">{thread.channel || 'SMS'}</div>

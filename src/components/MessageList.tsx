@@ -1,17 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import clsx from 'clsx';
-import { useMessages, Message, API_BASE_URL } from '@/lib/api';
+import { Message, API_BASE_URL } from '@/lib/api';
+import UserIcon from './UserIcon';
 import { useQueryClient } from '@tanstack/react-query';
 import io from 'socket.io-client';
 
 interface MessageListProps {
   threadId: string;
+  messages: Message[] | undefined;
 }
 
-export default function MessageList({ threadId }: MessageListProps) {
+export default function MessageList({ threadId, messages }: MessageListProps) {
   const queryClient = useQueryClient();
-  const { data: messages, isLoading } = useMessages(threadId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,24 +60,31 @@ export default function MessageList({ threadId }: MessageListProps) {
     };
   }, [threadId, queryClient]);
 
-  if (isLoading) return <div className="text-center text-gray-500 py-10">Loading messages...</div>;
-  if (!messages || messages.length === 0) return <div className="text-center text-gray-500 py-10">No messages in this thread yet.</div>;
+  if (!messages) return <div className="text-center text-gray-500 py-10">Loading messages...</div>;
+  if (messages.length === 0) return <div className="text-center text-gray-500 py-10">No messages in this thread yet.</div>;
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-4 h-full pr-2">
       {messages.map((m: Message) => (
         <div
           key={m.id}
           className={clsx(
-            'p-4 rounded-xl shadow-sm max-w-[75%]',
-            m.direction === 'INBOUND'
-              ? 'bg-gray-100 self-start rounded-bl-none text-gray-800'
-              : 'bg-blue-500 text-white self-end rounded-br-none'
+            'flex items-start gap-3',
+            m.direction === 'OUTBOUND' && 'self-end flex-row-reverse'
           )}
         >
-          <div className="text-base whitespace-pre-wrap">{m.body}</div>
+          <UserIcon className="h-8 w-8 text-gray-400" />
+          <div
+            className={clsx(
+              'p-4 rounded-xl shadow-sm max-w-[75%]',
+              m.direction === 'INBOUND'
+                ? 'bg-gray-100 self-start rounded-bl-none text-gray-800'
+                : 'bg-blue-500 text-white self-end rounded-br-none'
+            )}
+          >
+            <div className="text-base whitespace-pre-wrap">{m.body}</div>
 
-          {m.media?.length ? (
+            {m.media?.length ? (
             <div className="mt-3 flex gap-3 flex-wrap">
               {m.media.map((url: any, i: React.Key | null | undefined) => (
                 <div key={i} className="w-32 h-24 relative border border-gray-300 rounded-lg overflow-hidden shadow-sm">
@@ -84,13 +92,14 @@ export default function MessageList({ threadId }: MessageListProps) {
                 </div>
               ))}
             </div>
-          ) : null}
+            ) : null}
 
-          <div className={clsx(
-            'text-xs mt-2',
-            m.direction === 'INBOUND' ? 'text-gray-500' : 'text-blue-200'
-          )}>
-            {new Date(m.createdAt).toLocaleString()}
+            <div className={clsx(
+              'text-xs mt-2',
+              m.direction === 'INBOUND' ? 'text-gray-500' : 'text-blue-200'
+            )}>
+              {new Date(m.createdAt).toLocaleString()}
+            </div>
           </div>
         </div>
       ))}
