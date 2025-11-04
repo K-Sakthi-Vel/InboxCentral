@@ -4,9 +4,10 @@ import toast from 'react-hot-toast';
 
 interface ComposerProps {
   threadId: string;
+  initialChannel: string;
 }
 
-export default function Composer({ threadId }: ComposerProps) {
+export default function Composer({ threadId, initialChannel }: ComposerProps) {
   const [text, setText] = useState<string>('');
   const [scheduleAt, setScheduleAt] = useState<string>('');
   const send = useSendMessage();
@@ -21,7 +22,7 @@ export default function Composer({ threadId }: ComposerProps) {
         threadId,
         body: text,
         scheduleAt: scheduleAt ? new Date(scheduleAt).toISOString() : undefined,
-        channel: 'SMS' // default; later add selector
+        channel: initialChannel // Use the channel from the thread
       });
       setText('');
       setScheduleAt('');

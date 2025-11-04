@@ -152,14 +152,18 @@ export default function InboxPage(): JSX.Element {
             <div className="text-center text-gray-500 py-10">Loading threads...</div>
           ) : (
             <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-              {threads?.map((t: { id: any; contactName?: string | null | undefined; snippet?: string | null | undefined; unread?: number | null | undefined; updatedAt?: string | null | undefined; channel?: string | null | undefined; }) => (
-                <ThreadCard
-                  key={t.id}
-                  thread={t}
-                  isSelected={t.id === selectedThreadId}
-                  onClick={() => setSelectedThreadId(t.id)}
-                />
-              )) ?? <div className="text-center text-gray-500 py-10">No threads yet</div>}
+              {Array.isArray(threads) && threads.length > 0 ? (
+                threads.map((t: { id: any; contactName?: string | null | undefined; snippet?: string | null | undefined; unread?: number | null | undefined; updatedAt?: string | null | undefined; channel?: string | null | undefined; }) => (
+                  <ThreadCard
+                    key={t.id}
+                    thread={t}
+                    isSelected={t.id === selectedThreadId}
+                    onClick={() => setSelectedThreadId(t.id)}
+                  />
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-10">No threads yet</div>
+              )}
             </div>
           )}
         </aside>
@@ -207,7 +211,7 @@ export default function InboxPage(): JSX.Element {
 
             {/* Composer: Fixed height bottom section - Added flex-shrink-0 */}
             <div className="mt-6 flex-shrink-0">
-              <Composer threadId={selectedThreadId} />
+              <Composer threadId={selectedThreadId} initialChannel={threads?.find(t => t.id === selectedThreadId)?.channel || 'SMS'} />
             </div>
           </>
         ) : (

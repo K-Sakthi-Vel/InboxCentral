@@ -1,14 +1,63 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import clsx from 'clsx';
-import { useMessages, Message } from '@/lib/api';
+import { useMessages, Message, API_BASE_URL } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import io from 'socket.io-client';
 
 interface MessageListProps {
   threadId: string;
 }
 
 export default function MessageList({ threadId }: MessageListProps) {
+  const queryClient = useQueryClient();
   const { data: messages, isLoading } = useMessages(threadId);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    const socket = io(API_BASE_URL.replace('/api', '')); // Connect to the root of the backend URL
+
+    socket.on('connect', () => {
+      console.log('Socket.IO connected on frontend');
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Socket.IO disconnected on frontend');
+    });
+
+    socket.on('message.new', (newMessage: Message) => {
+      console.log('Frontend received message.new:', newMessage);
+      if (newMessage.contactId === threadId) {
+        queryClient.setQueryData(['messages', threadId], (oldMessages: Message[] | undefined) => {
+          if (oldMessages) {
+            // Check if message already exists to prevent duplicates
+            if (!oldMessages.some(msg => msg.id === newMessage.id)) {
+              const updatedMessages = [...oldMessages, newMessage];
+              console.log('Updating messages cache for thread', threadId, 'with new message:', newMessage);
+              return updatedMessages;
+            }
+            console.log('Message already exists in cache, not adding:', newMessage);
+            return oldMessages;
+          }
+          console.log('Initializing messages cache for thread', threadId, 'with new message:', newMessage);
+          return [newMessage];
+        });
+      }
+      // Invalidate threads query to update snippet/unread count
+      console.log('Invalidating threads query');
+      queryClient.invalidateQueries({ queryKey: ['threads'] });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [threadId, queryClient]);
 
   if (isLoading) return <div className="text-center text-gray-500 py-10">Loading messages...</div>;
   if (!messages || messages.length === 0) return <div className="text-center text-gray-500 py-10">No messages in this thread yet.</div>;
@@ -45,6 +94,7 @@ export default function MessageList({ threadId }: MessageListProps) {
           </div>
         </div>
       ))}
+      <div ref={messagesEndRef} /> {/* Add this ref for scrolling */}
     </div>
   );
 }
