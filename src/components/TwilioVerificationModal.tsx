@@ -9,6 +9,7 @@ interface TwilioVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentTwilioNumber: string;
+  isEditMode?: boolean; // New prop to indicate if it's for editing existing details
 }
 
 interface CountryCode {
@@ -25,7 +26,7 @@ const getCountryCodeFromPhoneNumber = (phoneNumber: string, countryCodes: Countr
   return '+1'; // Default to +1 if no match
 };
 
-export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = ({ isOpen, onClose, currentTwilioNumber }) => {
+export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = ({ isOpen, onClose, currentTwilioNumber, isEditMode = false }) => {
   const { user, fetchUser, updateTwilioNumber, verifyTwilioNumber } = useAuth();
   const [twilioNumber, setTwilioNumber] = useState('');
   const [twilioAccountSid, setTwilioAccountSid] = useState('');
@@ -136,15 +137,16 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
       return;
     }
 
-    if (!currentTwilioNumber && (!twilioAccountSid || !twilioAuthToken || !twilioSmsFrom || !twilioWhatsappFrom)) {
+    // Only require Twilio credentials if not in edit mode and no current number is set
+    if (!isEditMode && !currentTwilioNumber && (!twilioAccountSid || !twilioAuthToken || !twilioSmsFrom || !twilioWhatsappFrom)) {
       setError('Please fill in all Twilio credentials.');
       setLoadingRequestOtp(false);
       return;
     }
 
     try {
-      // Update Twilio details first if they are being provided for the first time
-      if (!currentTwilioNumber) {
+      // Update Twilio details first if they are being provided for the first time or in edit mode
+      if (!currentTwilioNumber || isEditMode) {
         const updateResult = await updateTwilioNumber(
           fullTwilioNumber,
           twilioAccountSid,
@@ -308,6 +310,8 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
               </div>
             </div>
 
+            {(!isEditMode || !currentTwilioNumber) && (
+              <>
                 <div className="mb-4">
                   <label htmlFor="twilioAccountSid" className="block text-gray-700 text-sm font-bold mb-2">
                     Twilio Account SID
@@ -318,7 +322,7 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-900 leading-tight focus:outline-none focus:shadow-outline"
                     value={twilioAccountSid}
                     onChange={(e) => setTwilioAccountSid(e.target.value)}
-                    required
+                    required={!isEditMode && !currentTwilioNumber}
                   />
                 </div>
                 <div className="mb-4">
@@ -331,7 +335,7 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-900 leading-tight focus:outline-none focus:shadow-outline"
                     value={twilioAuthToken}
                     onChange={(e) => setTwilioAuthToken(e.target.value)}
-                    required
+                    required={!isEditMode && !currentTwilioNumber}
                   />
                 </div>
                 <div className="mb-4">
@@ -344,7 +348,7 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-900 leading-tight focus:outline-none focus:shadow-outline"
                     value={twilioSmsFrom}
                     onChange={(e) => setTwilioSmsFrom(e.target.value)}
-                    required
+                    required={!isEditMode && !currentTwilioNumber}
                   />
                 </div>
                 <div className="mb-6">
@@ -357,9 +361,11 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-900 leading-tight focus:outline-none focus:shadow-outline"
                     value={twilioWhatsappFrom}
                     onChange={(e) => setTwilioWhatsappFrom(e.target.value)}
-                    required
+                    required={!isEditMode && !currentTwilioNumber}
                   />
                 </div>
+              </>
+            )}
 
             {error && <p className="text-red-700 text-sm italic mb-4">{error}</p>}
             {message && <p className="text-green-700 text-sm italic mb-4">{message}</p>}

@@ -18,7 +18,8 @@ export function AuthWrapper({ children, activeTabName }: AuthWrapperProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isTwilioModalOpen, setIsTwilioModalOpen] = useState(false); // State for Twilio modal
+  const [isInitialTwilioVerificationModalOpen, setIsInitialTwilioVerificationModalOpen] = useState(false); // State for initial Twilio modal
+  const [isEditTwilioModalOpen, setIsEditTwilioModalOpen] = useState(false); // State for edit Twilio modal
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isAuthPage = ['/login', '/signup', '/auth'].includes(pathname);
@@ -58,12 +59,16 @@ export function AuthWrapper({ children, activeTabName }: AuthWrapperProps) {
     };
   }, [dropdownRef]);
 
-  // Open Twilio verification modal if authenticated but not verified
+  // Open Twilio verification modal if authenticated but not verified or no number set
   useEffect(() => {
-    if (!loading && isAuthenticated && user && user.twilioNumber && !user.isTwilioVerified) {
-      setIsTwilioModalOpen(true);
+    if (!loading && isAuthenticated && user) {
+      if (!user.twilioNumber || !user.isTwilioVerified) {
+        setIsInitialTwilioVerificationModalOpen(true);
+      } else {
+        setIsInitialTwilioVerificationModalOpen(false);
+      }
     } else {
-      setIsTwilioModalOpen(false);
+      setIsInitialTwilioVerificationModalOpen(false);
     }
   }, [loading, isAuthenticated, user]);
 
@@ -95,7 +100,7 @@ export function AuthWrapper({ children, activeTabName }: AuthWrapperProps) {
             <div className="flex items-center mr-4 p-2"> {/* Added styling for phone number */}
               <span className="text-sm font-bold text-gray-700 mr-2">{user.twilioNumber}</span>
               <button
-                onClick={() => setIsTwilioModalOpen(true)} // Open modal instead of redirecting
+                onClick={() => setIsEditTwilioModalOpen(true)} // Open modal for editing
                 className="text-blue-500 hover:text-blue-700 text-lg" // Icon styling
                 aria-label="Edit Twilio Number"
               >
@@ -138,11 +143,15 @@ export function AuthWrapper({ children, activeTabName }: AuthWrapperProps) {
               )}
             </div>
           )}
-          {isTwilioModalOpen && (
+          {(isInitialTwilioVerificationModalOpen || isEditTwilioModalOpen) && (
             <TwilioVerificationModal
-              isOpen={isTwilioModalOpen}
-              onClose={() => setIsTwilioModalOpen(false)}
+              isOpen={isInitialTwilioVerificationModalOpen || isEditTwilioModalOpen}
+              onClose={() => {
+                setIsInitialTwilioVerificationModalOpen(false);
+                setIsEditTwilioModalOpen(false);
+              }}
               currentTwilioNumber={user?.twilioNumber || ''}
+              isEditMode={isEditTwilioModalOpen}
             />
           )}
         </div>
