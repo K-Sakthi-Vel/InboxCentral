@@ -6,7 +6,7 @@ import { useAuth } from '../../lib/useAuth';
 import { API_BASE_URL } from '../../lib/api';
 
 const VerifyTwilioPage: React.FC = () => {
-  const { user, loading, isAuthenticated, fetchUser } = useAuth();
+  const { user, loading, isAuthenticated, fetchUser, login } = useAuth();
   const router = useRouter();
 
   const [twilioNumber, setTwilioNumber] = useState(user?.twilioNumber || '');
@@ -83,7 +83,10 @@ const VerifyTwilioPage: React.FC = () => {
 
       if (res.ok) {
         setMessage(data.message);
-        await fetchUser(); // Re-fetch user data to update verification status
+        const token = localStorage.getItem('token');
+        if (token && data.user) {
+          login(token, data.user); // Directly update user state with the returned user object
+        }
         router.push('/');
       } else {
         setError(data.message || 'Failed to verify OTP.');

@@ -9,8 +9,12 @@ interface User {
   email: string;
   name?: string;
   avatarUrl?: string;
-  twilioNumber?: string | null; // Make nullable
+  twilioNumber?: string | null;
   isTwilioVerified?: boolean;
+  twilioAccountSid?: string | null;
+  twilioAuthToken?: string | null;
+  twilioSmsFrom?: string | null;
+  twilioWhatsappFrom?: string | null;
   teamRoles?: { teamId: string }[];
 }
 
@@ -22,8 +26,21 @@ interface AuthState {
   logout: () => void;
   fetchUser: () => Promise<void>;
   requestTwilioVerification: (twilioNumber: string) => Promise<{ success: boolean; message: string }>;
-  verifyTwilioNumber: (twilioNumber: string, otp: string) => Promise<{ success: boolean; message: string }>;
-  updateTwilioNumber: (twilioNumber: string) => Promise<{ success: boolean; message: string }>;
+  verifyTwilioNumber: (
+    twilioNumber: string,
+    otp: string,
+    twilioAccountSid?: string | null,
+    twilioAuthToken?: string | null,
+    twilioSmsFrom?: string | null,
+    twilioWhatsappFrom?: string | null
+  ) => Promise<{ success: boolean; message: string; user?: User }>;
+  updateTwilioNumber: (
+    twilioNumber: string,
+    twilioAccountSid: string,
+    twilioAuthToken: string,
+    twilioSmsFrom: string,
+    twilioWhatsappFrom: string
+  ) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -74,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (token: string, user: User) => {
     localStorage.setItem('token', token);
-    setAuthState({ user, loading: false, isAuthenticated: true });
+    setAuthState({ user: { ...user, isTwilioVerified: user.isTwilioVerified }, loading: false, isAuthenticated: true });
   };
 
   const logout = () => {
@@ -92,23 +109,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const verifyTwilioNumber = async (twilioNumber: string, otp: string) => {
+  const verifyTwilioNumber = async (
+    twilioNumber: string,
+    otp: string,
+    twilioAccountSid?: string | null,
+    twilioAuthToken?: string | null,
+    twilioSmsFrom?: string | null,
+    twilioWhatsappFrom?: string | null
+  ) => {
     try {
-      await verifyOtpMutation.mutateAsync({ twilioNumber, otp });
-      await fetchUser();
-      return { success: true, message: 'Twilio number verified successfully!' };
+      const response = await verifyOtpMutation.mutateAsync({
+        twilioNumber,
+        otp,
+        twilioAccountSid,
+        twilioAuthToken,
+        twilioSmsFrom,
+        twilioWhatsappFrom,
+      });
+      await fetchUser(); // Ensure the global user state is updated
+      return { success: true, message: 'Twilio number verified successfully!', user: response.user };
     } catch (error: any) {
       return { success: false, message: error.response?.data?.message || 'Failed to verify OTP.' };
     }
   };
 
-  const updateTwilioNumber = async (twilioNumber: string) => {
+  const updateTwilioNumber = async (
+    twilioNumber: string,
+    twilioAccountSid: string,
+    twilioAuthToken: string,
+    twilioSmsFrom: string,
+    twilioWhatsappFrom: string
+  ) => {
     try {
-      await updateTwilioNumberMutation.mutateAsync(twilioNumber);
+      await updateTwilioNumberMutation.mutateAsync({
+        twilioNumber,
+        twilioAccountSid,
+        twilioAuthToken,
+        twilioSmsFrom,
+        twilioWhatsappFrom,
+      });
       await fetchUser();
-      return { success: true, message: 'Twilio number updated. Please verify.' };
+      return { success: true, message: 'Twilio details updated. Please verify.' };
     } catch (error: any) {
-      return { success: false, message: error.response?.data?.message || 'Failed to update Twilio number.' };
+      return { success: false, message: error.response?.data?.message || 'Failed to update Twilio details.' };
     }
   };
 

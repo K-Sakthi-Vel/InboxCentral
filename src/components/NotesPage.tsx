@@ -41,9 +41,9 @@ export default function NotesPage() {
         {showAddNoteModal && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-              <h3 className="text-xl font-semibold mb-4">Add New Note</h3>
+              <h3 className="text-xl font-semibold mb-4 text-black">Add New Note</h3>
               <textarea
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                className="w-full p-3 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                 rows={5}
                 placeholder="Write your note here..."
                 value={newNoteContent}

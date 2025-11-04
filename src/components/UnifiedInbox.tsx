@@ -11,12 +11,12 @@ import { useAuth } from '@/lib/useAuth'; // Import useAuth hook
 import { TwilioVerificationModal } from '@/components/TwilioVerificationModal'; // Import the TwilioVerificationModal
 
 export default function UnifiedInbox(): JSX.Element {
-  const { data: threads, isLoading } = useThreads();
+  const { user, isAuthenticated, loading: authLoading, requestTwilioVerification, verifyTwilioNumber } = useAuth(); // Moved up for useThreads
+  const { data: threads, isLoading, refetch: refetchThreads } = useThreads(user?.id); // Pass user.id to useThreads
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const { data: messages } = useMessages(selectedThreadId ?? '');
   const selectedThread = threads?.find(t => t.id === selectedThreadId);
   const [showContact, setShowContact] = useState(false);
-  const { user, isAuthenticated, loading: authLoading, requestTwilioVerification, verifyTwilioNumber } = useAuth();
   const [showTwilioVerification, setShowTwilioVerification] = useState(false);
   const [twilioNumberInput, setTwilioNumberInput] = useState('');
   const [otpInput, setOtpInput] = useState('');
@@ -67,6 +67,7 @@ export default function UnifiedInbox(): JSX.Element {
     if (result.success) {
       setTwilioSuccess(result.message);
       setShowTwilioVerification(false); // Close modal on success
+      refetchThreads(); // Refetch threads after successful verification
     } else {
       setTwilioError(result.message);
     }

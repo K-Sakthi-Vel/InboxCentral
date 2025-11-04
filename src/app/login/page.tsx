@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/lib/useAuth';
 
 export default function LoginPage() {
@@ -49,6 +50,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <div className="flex justify-center mb-4">
+          <Image src="/logo.png" alt="Logo" width={100} height={100} />
+        </div>
         <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">Welcome Back</h2>
         {error && <p className="text-red-600 text-center mb-4">{error}</p>}
         <form onSubmit={handleLogin}>

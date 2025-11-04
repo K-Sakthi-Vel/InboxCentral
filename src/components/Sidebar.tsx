@@ -40,7 +40,7 @@ export default function Sidebar({ children, onTabChange }: SidebarProps) {
         } bg-gray-800 text-white shadow-lg transition-all duration-300 ease-in-out`}
       >
         {/* Logo and App Name */}
-        <div className="flex items-center justify-center h-16 border-b border-gray-700">
+        <div className="flex items-center justify-start h-16 border-b border-gray-700 ml-5">
           <Image src="/logo.png" alt="App Logo" width={32} height={32} className="mr-2" />
           {isExpanded && <span className="text-xl font-semibold">Inbox Central</span>}
         </div>

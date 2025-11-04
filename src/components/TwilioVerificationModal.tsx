@@ -26,8 +26,12 @@ const getCountryCodeFromPhoneNumber = (phoneNumber: string, countryCodes: Countr
 };
 
 export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = ({ isOpen, onClose, currentTwilioNumber }) => {
-  const { user, fetchUser } = useAuth();
+  const { user, fetchUser, updateTwilioNumber, verifyTwilioNumber } = useAuth();
   const [twilioNumber, setTwilioNumber] = useState('');
+  const [twilioAccountSid, setTwilioAccountSid] = useState('');
+  const [twilioAuthToken, setTwilioAuthToken] = useState('');
+  const [twilioSmsFrom, setTwilioSmsFrom] = useState('');
+  const [twilioWhatsappFrom, setTwilioWhatsappFrom] = useState('');
   const [selectedCountryCode, setSelectedCountryCode] = useState('+1');
   const [otp, setOtp] = useState('');
   const [message, setMessage] = useState('');
@@ -72,12 +76,20 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
         const code = getCountryCodeFromPhoneNumber(currentTwilioNumber, countryCodes);
         setSelectedCountryCode(code);
         setTwilioNumber(currentTwilioNumber.substring(code.length));
+        setTwilioAccountSid(user?.twilioAccountSid || '');
+        setTwilioAuthToken(user?.twilioAuthToken || '');
+        setTwilioSmsFrom(user?.twilioSmsFrom || '');
+        setTwilioWhatsappFrom(user?.twilioWhatsappFrom || '');
       } else {
         setSelectedCountryCode('+1');
         setTwilioNumber('');
+        setTwilioAccountSid('');
+        setTwilioAuthToken('');
+        setTwilioSmsFrom('');
+        setTwilioWhatsappFrom('');
       }
     }
-  }, [isOpen, currentTwilioNumber, countryCodes, loadingCountryCodes]);
+  }, [isOpen, currentTwilioNumber, countryCodes, loadingCountryCodes, user]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -120,7 +132,29 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
       return;
     }
 
+    if (!currentTwilioNumber && (!twilioAccountSid || !twilioAuthToken || !twilioSmsFrom || !twilioWhatsappFrom)) {
+      setError('Please fill in all Twilio credentials.');
+      return;
+    }
+
     try {
+      // Update Twilio details first if they are being provided for the first time
+      if (!currentTwilioNumber) {
+        const updateResult = await updateTwilioNumber(
+          fullTwilioNumber,
+          twilioAccountSid,
+          twilioAuthToken,
+          twilioSmsFrom,
+          twilioWhatsappFrom
+        );
+
+        if (!updateResult.success) {
+          setError(updateResult.message);
+          toast.error(updateResult.message);
+          return;
+        }
+      }
+
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/auth/request-twilio-otp`, {
         method: 'POST',
@@ -161,26 +195,22 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/auth/verify-twilio-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ twilioNumber: fullTwilioNumber, otp }),
-      });
+      const result = await verifyTwilioNumber(
+        fullTwilioNumber,
+        otp,
+        twilioAccountSid,
+        twilioAuthToken,
+        twilioSmsFrom,
+        twilioWhatsappFrom
+      );
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setMessage(data.message);
-        await fetchUser(); // Re-fetch user data to update verification status
-        toast.success(data.message);
+      if (result.success) {
+        setMessage(result.message);
+        toast.success(result.message);
         onClose(); // Close modal on successful verification
       } else {
-        setError(data.message || 'Failed to verify OTP.');
-        toast.error(data.message || 'Failed to verify OTP.');
+        setError(result.message);
+        toast.error(result.message);
       }
     } catch (err) {
       console.error('Verify OTP error:', err);
@@ -265,6 +295,60 @@ export const TwilioVerificationModal: React.FC<TwilioVerificationModalProps> = (
                 />
               </div>
             </div>
+
+                <div className="mb-4">
+                  <label htmlFor="twilioAccountSid" className="block text-gray-700 text-sm font-bold mb-2">
+                    Twilio Account SID
+                  </label>
+                  <input
+                    type="text"
+                    id="twilioAccountSid"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-900 leading-tight focus:outline-none focus:shadow-outline"
+                    value={twilioAccountSid}
+                    onChange={(e) => setTwilioAccountSid(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="twilioAuthToken" className="block text-gray-700 text-sm font-bold mb-2">
+                    Twilio Auth Token
+                  </label>
+                  <input
+                    type="text"
+                    id="twilioAuthToken"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-900 leading-tight focus:outline-none focus:shadow-outline"
+                    value={twilioAuthToken}
+                    onChange={(e) => setTwilioAuthToken(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="twilioSmsFrom" className="block text-gray-700 text-sm font-bold mb-2">
+                    Twilio SMS From Number
+                  </label>
+                  <input
+                    type="text"
+                    id="twilioSmsFrom"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-900 leading-tight focus:outline-none focus:shadow-outline"
+                    value={twilioSmsFrom}
+                    onChange={(e) => setTwilioSmsFrom(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="mb-6">
+                  <label htmlFor="twilioWhatsappFrom" className="block text-gray-700 text-sm font-bold mb-2">
+                    Twilio WhatsApp From Number
+                  </label>
+                  <input
+                    type="text"
+                    id="twilioWhatsappFrom"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-900 leading-tight focus:outline-none focus:shadow-outline"
+                    value={twilioWhatsappFrom}
+                    onChange={(e) => setTwilioWhatsappFrom(e.target.value)}
+                    required
+                  />
+                </div>
+
             {error && <p className="text-red-700 text-sm italic mb-4">{error}</p>}
             {message && <p className="text-green-700 text-sm italic mb-4">{message}</p>}
             <button

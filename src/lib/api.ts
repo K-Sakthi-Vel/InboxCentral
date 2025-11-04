@@ -57,10 +57,13 @@ api.interceptors.request.use(
 );
 
 /** Fetch threads (group by contact) */
-export function useThreads() {
+export function useThreads(userId: string | undefined) {
   return useQuery<Thread[], Error>({
-    queryKey: ['threads'],
+    queryKey: ['threads', userId], // Include userId in the query key
     queryFn: async () => {
+      if (!userId) {
+        return []; // Return empty array if no userId is provided
+      }
       try {
         const res = await api.get<Thread[]>('/inbox/threads');
         return res.data;
@@ -68,6 +71,7 @@ export function useThreads() {
         throw err; // Re-throw the error to be handled by React Query's error handling
       }
     },
+    enabled: !!userId, // Only enable the query if userId is available
   });
 }
 
@@ -75,12 +79,19 @@ export function useThreads() {
 export function useUpdateTwilioNumber() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (twilioNumber: string) => {
-      const res = await api.put('/auth/update-twilio-number', { twilioNumber });
+    mutationFn: async (payload: {
+      twilioNumber: string;
+      twilioAccountSid: string;
+      twilioAuthToken: string;
+      twilioSmsFrom: string;
+      twilioWhatsappFrom: string;
+    }) => {
+      const res = await api.put('/auth/update-twilio-number', payload);
       return res.data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['session'] }); // Invalidate session to refetch user data
+      qc.invalidateQueries({ queryKey: ['threads'] }); // Invalidate threads to refetch thread data
     },
   });
 }
@@ -99,12 +110,20 @@ export function useRequestTwilioOtp() {
 export function useVerifyTwilioOtp() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { twilioNumber: string; otp: string }) => {
+    mutationFn: async (payload: {
+      twilioNumber: string;
+      otp: string;
+      twilioAccountSid?: string | null;
+      twilioAuthToken?: string | null;
+      twilioSmsFrom?: string | null;
+      twilioWhatsappFrom?: string | null;
+    }) => {
       const res = await api.post('/auth/verify-twilio-otp', payload);
       return res.data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['session'] }); // Invalidate session to refetch user data
+      qc.invalidateQueries({ queryKey: ['threads'] }); // Invalidate threads to refetch thread data
     },
   });
 }
@@ -141,16 +160,34 @@ export function useSendMessage() {
 }
 
 /** Fetch all notes */
-export function useNotes() {
+export function useNotes(userId: string | undefined) {
   return useQuery<Note[], Error>({
-    queryKey: ['notes'],
+    queryKey: ['notes', userId], // Include userId in the query key
     queryFn: async () => {
+      if (!userId) {
+        return []; // Return empty array if no userId is provided
+      }
       try {
         const res = await api.get<Note[]>('/notes');
         return res.data;
       } catch (err) {
         throw err;
       }
+    },
+    enabled: !!userId, // Only enable the query if userId is available
+  });
+}
+
+/** Remove Twilio Number mutation */
+export function useRemoveTwilioNumber() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/auth/remove-twilio-number');
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['session'] }); // Invalidate session to refetch user data
     },
   });
 }
@@ -164,7 +201,7 @@ export function useSaveNote() {
       return res.data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['notes'] });
+      qc.invalidateQueries({ queryKey: ['notes'] }); // Invalidate notes to refetch note data
     },
   });
 }

@@ -30,7 +30,7 @@ const lightColors = [
 
 export default function Notes({ onNoteAdded }: NotesProps) {
   const { user } = useAuth();
-  const { data: notes, isLoading, error, refetch } = useNotes();
+  const { data: notes, isLoading, error, refetch } = useNotes(user?.id); // Pass user.id to useNotes
   const teamId = user?.teamRoles?.[0]?.teamId;
   const socket = useSocket(teamId);
 

@@ -3,6 +3,7 @@
 import React, { ReactNode, useEffect, useState, useRef } from 'react';
 import { TwilioVerificationModal } from '../components/TwilioVerificationModal'; // Will create this component
 import { useAuth } from '@/lib/useAuth';
+import { useRemoveTwilioNumber } from '@/lib/api'; // Import the new mutation hook
 import { useRouter, usePathname } from 'next/navigation';
 import { Toaster } from 'react-hot-toast';
 
@@ -13,6 +14,7 @@ interface AuthWrapperProps {
 
 export function AuthWrapper({ children, activeTabName }: AuthWrapperProps) {
   const { user, loading, isAuthenticated, logout } = useAuth();
+  const { mutate: removeTwilioNumber } = useRemoveTwilioNumber(); // Use the new mutation hook
   const router = useRouter();
   const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -35,17 +37,10 @@ export function AuthWrapper({ children, activeTabName }: AuthWrapperProps) {
         router.replace('/login');
       }
     } else { // isAuthenticated is true
-      if (user && user.twilioNumber && !user.isTwilioVerified) {
-        // If authenticated but Twilio not verified, and not already on the verify-twilio page, redirect to verify-twilio
-        if (!isVerifyTwilioPage) {
-          router.replace('/verify-twilio');
-        }
-      } else {
-        // If authenticated and Twilio is verified (or no Twilio number set),
-        // and currently on a public authentication page (excluding /auth) or verify-twilio page, redirect to home
-        if ((isAuthPage || isVerifyTwilioPage) && pathname !== '/') {
-          router.replace('/');
-        }
+      // If authenticated and Twilio is verified (or no Twilio number set),
+      // and currently on a public authentication page (excluding /auth) or verify-twilio page, redirect to home
+      if ((isAuthPage || isVerifyTwilioPage) && pathname !== '/') {
+        router.replace('/');
       }
     }
   }, [loading, isAuthenticated, user, pathname, router]);
@@ -63,6 +58,15 @@ export function AuthWrapper({ children, activeTabName }: AuthWrapperProps) {
     };
   }, [dropdownRef]);
 
+  // Open Twilio verification modal if authenticated but not verified
+  useEffect(() => {
+    if (!loading && isAuthenticated && user && user.twilioNumber && !user.isTwilioVerified) {
+      setIsTwilioModalOpen(true);
+    } else {
+      setIsTwilioModalOpen(false);
+    }
+  }, [loading, isAuthenticated, user]);
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-100">Loading application...</div>;
   }
@@ -74,7 +78,7 @@ export function AuthWrapper({ children, activeTabName }: AuthWrapperProps) {
 
   // If authenticated and on a public auth page (excluding /auth, which handles its own redirection),
   // return null to prevent rendering the auth page content.
-  if (isAuthenticated && (isAuthPage || isVerifyTwilioPage)) {
+  if (isAuthenticated && isAuthPage) {
     return null;
   }
 
@@ -102,7 +106,7 @@ export function AuthWrapper({ children, activeTabName }: AuthWrapperProps) {
           {isAuthenticated && user && (
             <div className="relative" ref={dropdownRef}>
               <button
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-700 font-bold text-sm"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-700 font-bold text-sm"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
                 {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
@@ -113,6 +117,17 @@ export function AuthWrapper({ children, activeTabName }: AuthWrapperProps) {
                     <p className="font-bold">{user.name || 'User'}</p>
                     <p className="text-gray-500">{user.email}</p>
                   </div>
+                  {user.isTwilioVerified && user.twilioNumber && (
+                    <button
+                      onClick={() => {
+                        removeTwilioNumber(); // Call the mutation to remove the Twilio number
+                        setIsDropdownOpen(false); // Close dropdown after click
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      Remove Verified Number
+                    </button>
+                  )}
                   <button
                     onClick={logout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
